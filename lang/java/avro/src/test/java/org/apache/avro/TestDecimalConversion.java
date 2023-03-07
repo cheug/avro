@@ -207,4 +207,15 @@ public class TestDecimalConversion {
 
     assertEquals(new BigDecimal("123.45"), fromBytes);
   }
+
+  @Test
+  void importanceOfInsuringDecodedValueCompatibleWithPrecision() {
+    LogicalTypes.Decimal decimal = (LogicalTypes.Decimal) smallerLogicalType;
+    final BigDecimal bigDecimal = new BigDecimal("12345.67");
+    final byte[] bytes = bigDecimal.unscaledValue().toByteArray();
+
+    AvroTypeException avroTypeException = assertThrows(AvroTypeException.class,
+        () -> CONVERSION.fromBytes(ByteBuffer.wrap(bytes), smallerSchema, decimal));
+    assertEquals("Cannot decode decimal with precision 7 as max precision 5", avroTypeException.getMessage());
+  }
 }
