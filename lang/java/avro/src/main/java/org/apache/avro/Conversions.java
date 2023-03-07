@@ -79,11 +79,20 @@ public class Conversions {
 
     @Override
     public BigDecimal fromBytes(ByteBuffer value, Schema schema, LogicalType type) {
-      int scale = ((LogicalTypes.Decimal) type).getScale();
+      LogicalTypes.Decimal decimalType = (LogicalTypes.Decimal) type;
+      int scale = decimalType.getScale();
       // always copy the bytes out because BigInteger has no offset/length ctor
       byte[] bytes = new byte[value.remaining()];
       value.duplicate().get(bytes);
-      return new BigDecimal(new BigInteger(bytes), scale);
+      BigDecimal decodedValue = new BigDecimal(new BigInteger(bytes), scale);
+
+      int valuePrecision = decodedValue.precision();
+      int precision = decimalType.getPrecision();
+      if (valuePrecision > precision) {
+        throw new AvroTypeException(
+            "Cannot decode decimal with precision " + valuePrecision + " as max precision " + precision);
+      }
+      return decodedValue;
     }
 
     @Override
